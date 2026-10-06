@@ -1,6 +1,6 @@
-# Home Credit Default Risk Credit Scoring Pipeline
+# Home Credit Default Risk: Credit Scoring Pipeline
 
-An end-to-end credit risk project that predicts whether a loan applicant will have difficulty repaying, using the [Home Credit Default Risk](httpswww.kaggle.comchome-credit-default-risk) dataset. The workflow follows how a lender builds a scorecard data cleaning, feature engineering, Weight of Evidence  Information Value (WoEIV) analysis, model training, and a cost-based decision threshold.
+An end-to-end credit risk project that predicts whether a loan applicant will have difficulty repaying, using the [Home Credit Default Risk](https://www.kaggle.com/c/home-credit-default-risk) dataset. The workflow follows how a lender builds a scorecard: data cleaning, feature engineering, Weight of Evidence / Information Value (WoE/IV) analysis, model training, and a cost-based decision threshold.
 
 ---
 
@@ -19,78 +19,73 @@ An end-to-end credit risk project that predicts whether a loan applicant will ha
 ---
 
 ## Problem Statement
-Given an applicant's profile and prior credit history, predict `TARGET`
+Given an applicant's profile and prior credit history, predict `TARGET`:
 
- Value  Meaning 
-------
- `0`  Customer repaid on time 
- `1`  Customer had difficulty repaying (default) 
+| Value | Meaning |
+|---|---|
+| `0` | Customer repaid on time |
+| `1` | Customer had difficulty repaying (default) |
 
 The data is heavily imbalanced (about 8% defaults), so accuracy is not a useful metric. The project uses ranking and risk metrics and ends with a business decision rule.
 
 ## Dataset
-Source [Kaggle, Home Credit Default Risk](httpswww.kaggle.comchome-credit-default-riskdata)
+Source: [Kaggle, Home Credit Default Risk](https://www.kaggle.com/c/home-credit-default-risk/data)
 
- File  Description  Used 
----------
- `application_train.csv`  One row per applicant, includes `TARGET`  Yes 
- `bureau.csv`  Applicant's previous credits at other institutions  Yes 
- `HomeCredit_columns_description.csv`  Column documentation  Yes 
- `application_test.csv`  Test set without labels (Kaggle submission)  No 
- `bureau_balance.csv`, `previous_application.csv`, `installments_payments.csv`, `credit_card_balance.csv`, `POS_CASH_balance.csv`  Additional history tables  No (see [Future Work](#future-work)) 
+| File | Description | Used |
+|---|---|---|
+| `application_train.csv` | One row per applicant, includes `TARGET` | Yes |
+| `bureau.csv` | Applicant's previous credits at other institutions | Yes |
+| `HomeCredit_columns_description.csv` | Column documentation | Yes |
+| `application_test.csv` | Test set without labels (Kaggle submission) | No |
+| `bureau_balance.csv`, `previous_application.csv`, `installments_payments.csv`, `credit_card_balance.csv`, `POS_CASH_balance.csv` | Additional history tables | No (see [Future Work](#future-work)) |
 
- The data is not included in this repository. Download it from Kaggle (see [Setup](#setup)).
+> The data is not included in this repository. Download it from Kaggle (see [Setup](#setup)).
 
 ## Project Structure
 ```
 .
 ├── home_credit_risk_complete.ipynb   # Full pipeline, cell by cell
-├── home_credit_risk_complete.py      # Same pipeline as a single script
-├── src
-│   └── utils.py                      # unzip_file, minimize_memory_usage (optional)
-├── models                           # Saved models (created on run)
-│   ├── lgbm_credit_risk.joblib
-│   ├── logreg_credit_risk.joblib
-│   └── metadata.joblib
-├── requirements.txt
-└── README.md
+├── requirements.txt                  # Python dependencies
+├── README.md
+└── models/                           # Created automatically when the notebook is run
+    ├── lgbm_credit_risk.joblib
+    ├── logreg_credit_risk.joblib
+    └── metadata.joblib
 ```
-If `srcutils.py` is missing, the code falls back to built-in versions of both helpers.
+Everything lives in the notebook. Helper functions for unzipping and memory reduction are defined inside it, so no extra modules are needed. The `data/` and `models/` folders are generated at run time and should not be committed.
 
 ## Setup
 
-1. Create and activate a virtual environment
+**1. Create and activate a virtual environment**
 ```bash
 python -m venv .venv
 # Windows
-.venvScriptsactivate
-# macOS  Linux
-source .venvbinactivate
+.venv\Scripts\activate
+# macOS / Linux
+source .venv/bin/activate
 ```
 
-2. Install dependencies
+**2. Install dependencies**
 ```bash
-pip install -U pandas numpy matplotlib seaborn scikit-learn lightgbm joblib kagglehub
+pip install -r requirements.txt
 ```
 
-3. Get the data from Kaggle
-1. Log in to Kaggle and open the [competition page](httpswww.kaggle.comchome-credit-default-riskdata).
-2. Click Join Competition and accept the rules (required, otherwise downloads fail with a 403 error).
-3. Create an API token under Settings, API, then authenticate in one of these ways
+**3. Get the data from Kaggle**
+1. Log in to Kaggle and open the [competition page](https://www.kaggle.com/c/home-credit-default-risk/data).
+2. Click **Join Competition** and accept the rules (required, otherwise downloads fail with a 403 error).
+3. Create an API token under **Settings, API**, then authenticate in one of these ways:
    - Run `kagglehub.login()` and enter your username and token, or
    - Set the environment variables `KAGGLE_USERNAME` and `KAGGLE_KEY`, or
    - Download the zip manually, extract it, and set `DATA_DIR` in the notebook to that folder.
 
- Never commit your Kaggle token to version control.
+> Never commit your Kaggle token to version control.
 
 ## How to Run
-Notebook open `home_credit_risk_complete.ipynb` and run the cells from top to bottom.
-
-Script
-```bash
-python home_credit_risk_complete.py
-```
-Set `SHOW_EDA = False` at the top of the file to skip plots, and edit `COST_FN`  `COST_FP` to match real business costs.
+1. Open `home_credit_risk_complete.ipynb` in Jupyter or VS Code and select the `.venv` kernel.
+2. Run the cells from top to bottom (each cell depends on the ones before it).
+3. Optional settings at the top of the notebook:
+   - `SHOW_EDA = False` skips the EDA plots.
+   - `COST_FN` / `COST_FP` set the business cost of a missed defaulter vs a rejected good customer.
 
 ## Methodology
 
@@ -98,58 +93,58 @@ Set `SHOW_EDA = False` at the top of the file to skip plots, and edit `COST_FN` 
 - Memory optimisation by downcasting numeric types.
 - Columns with more than 50% missing values are dropped.
 - Columns with 10-50% missing values get a NaN indicator flag, then imputation.
-- Remaining nulls median (numeric) and mode (categorical).
-- `DAYS_` columns converted to years; the `365243` placeholder in `DAYS_EMPLOYED` is flagged and replaced.
+- Remaining nulls: median (numeric) and mode (categorical).
+- `DAYS_*` columns converted to years; the `365243` placeholder in `DAYS_EMPLOYED` is flagged and replaced.
 - Rows with `CODE_GENDER = XNA` removed.
 
 ### 2. Feature engineering
-- Ratios `INCOME_BY_CREDIT`, `ANNUITY_BY_INCOME`, `GOODS_AMT_BY_CREDIT`.
-- Social-circle default percentages `DEF_30_RATIO`, `DEF_60_RATIO`.
+- Ratios: `INCOME_BY_CREDIT`, `ANNUITY_BY_INCOME`, `GOODS_AMT_BY_CREDIT`.
+- Social-circle default percentages: `DEF_30_RATIO`, `DEF_60_RATIO`.
 - Age bands (`AGE_BIN`).
-- Bureau aggregates per applicant totalmean credit and debt, mean debt-to-credit ratio, overdue and active counts, credit recency, and a `HAS_BUREAU_RECORD` flag.
+- Bureau aggregates per applicant: total/mean credit and debt, mean debt-to-credit ratio, overdue and active counts, credit recency, and a `HAS_BUREAU_RECORD` flag.
 - Redundant features removed (document flags, duplicate building statistics, sparse inquiry counts).
 
-### 3. Feature analysis (WoE  IV)
+### 3. Feature analysis (WoE / IV)
 Each feature is binned and scored with Information Value, the standard credit-scoring way to rank predictors.
 
- IV  Predictive power 
-------
-  0.02  Useless 
- 0.02 - 0.1  Weak 
- 0.1 - 0.3  Medium 
- 0.3 - 0.5  Strong 
-  0.5  Suspicious, check for leakage 
+| IV | Predictive power |
+|---|---|
+| < 0.02 | Useless |
+| 0.02 - 0.1 | Weak |
+| 0.1 - 0.3 | Medium |
+| 0.3 - 0.5 | Strong |
+| > 0.5 | Suspicious, check for leakage |
 
 ### 4. Modelling
- Model  Purpose 
-------
- Logistic Regression  Interpretable baseline (quantile scaling, one-hot encoding, balanced class weights) 
- LightGBM  Main model (early stopping, `scale_pos_weight` for imbalance) 
+| Model | Purpose |
+|---|---|
+| Logistic Regression | Interpretable baseline (quantile scaling, one-hot encoding, balanced class weights) |
+| LightGBM | Main model (early stopping, `scale_pos_weight` for imbalance) |
 
-An 8020 stratified traintest split is used. A validation slice of the training data drives early stopping and threshold selection, so the test set is only used for final reporting.
+An 80/20 stratified train/test split is used. A validation slice of the training data drives early stopping and threshold selection, so the test set is only used for final reporting.
 
 ### 5. Decision threshold
-The cut-off is chosen to minimise expected cost, where a missed defaulter costs `COST_FN` and a rejected good customer costs `COST_FP` (default 51, which should be replaced with real figures).
+The cut-off is chosen to minimise expected cost, where a missed defaulter costs `COST_FN` and a rejected good customer costs `COST_FP` (default 5:1, which should be replaced with real figures).
 
 ## Evaluation
-- ROC-AUC overall ranking ability
-- PR-AUC performance on the minority class
-- KS statistic separation between good and bad customers (credit-industry standard)
-- 5-fold cross-validation stability of the AUC estimate
-- Risk deciles default rate and lift from the lowest to highest risk band
-- Confusion matrix at the cost-optimal threshold recall, precision, approval rate
+- **ROC-AUC**: overall ranking ability
+- **PR-AUC**: performance on the minority class
+- **KS statistic**: separation between good and bad customers (credit-industry standard)
+- **5-fold cross-validation**: stability of the AUC estimate
+- **Risk deciles**: default rate and lift from the lowest to highest risk band
+- **Confusion matrix** at the cost-optimal threshold: recall, precision, approval rate
 
 ## Results
 Run the notebook to populate this table with your own numbers.
 
- Model  ROC-AUC  PR-AUC  KS 
-------------
- Logistic Regression  _fill in_  _fill in_  _fill in_ 
- LightGBM  _fill in_  _fill in_  _fill in_ 
+| Model | ROC-AUC | PR-AUC | KS |
+|---|---|---|---|
+| Logistic Regression | _fill in_ | _fill in_ | _fill in_ |
+| LightGBM | _fill in_ | _fill in_ | _fill in_ |
 
 ## Limitations
 - Only 2 of the 7 source tables are used, which limits achievable AUC.
-- Missing-value imputation is performed before the traintest split, a minor leakage risk. Moving it into the sklearn pipeline would remove it.
+- Missing-value imputation is performed before the train/test split, a minor leakage risk. Moving it into the sklearn pipeline would remove it.
 - No hyperparameter tuning has been done.
 - No fairness analysis has been done (for example, on `CODE_GENDER`), which matters for lending models.
 - Cost ratios for the threshold are assumptions.
@@ -159,7 +154,7 @@ Run the notebook to populate this table with your own numbers.
 - Hyperparameter search with Optuna.
 - SHAP explanations for individual decisions.
 - WoE-based logistic regression scorecard with score scaling.
-- Probability calibration and fairness  bias review.
+- Probability calibration and fairness / bias review.
 - Model deployment (for example, a FastAPI scoring endpoint).
 
 ## Acknowledgements
